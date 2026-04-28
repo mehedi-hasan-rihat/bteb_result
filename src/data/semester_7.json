@@ -1,0 +1,20 @@
+[
+  {
+    "roll": "686411",
+    "institute_code": "70050",
+    "institute_name": "Chittagong Institute Of Science And Technology, Chattogram",
+    "status": "referred",
+    "gpas": {
+      "gpa7": null,
+      "gpa6": 2.79,
+      "gpa5": 2.58,
+      "gpa4": 2.93,
+      "gpa3": 2.64,
+      "gpa2": 2.88,
+      "gpa1": 2.75
+    },
+    "ref_subjects": [
+      "25853(T)"
+    ]
+  }
+]
