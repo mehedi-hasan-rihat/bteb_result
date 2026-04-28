@@ -60,9 +60,11 @@ function parseResults(text: string): Student[] {
 
 export async function POST(request: NextRequest) {
   try {
-    const { password, uploadId } = await request.json();
+    const { password, uploadId, semester } = await request.json();
     if (password !== ADMIN_PASSWORD)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!semester || semester < 1 || semester > 8)
+      return NextResponse.json({ error: 'Invalid semester (1-8)' }, { status: 400 });
 
     const tmpPath = join('/tmp', `${uploadId}.pdf`);
     if (!existsSync(tmpPath))
@@ -75,9 +77,9 @@ export async function POST(request: NextRequest) {
 
     const students = parseResults(fullText);
 
-    const dataDir = join(process.cwd(), 'data');
+    const dataDir = join(process.cwd(), 'src', 'data');
     if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
-    writeFileSync(join(dataDir, 'results.json'), JSON.stringify(students, null, 2));
+    writeFileSync(join(dataDir, `semester_${semester}.json`), JSON.stringify(students, null, 2));
 
     unlinkSync(tmpPath);
 

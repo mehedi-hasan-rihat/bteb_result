@@ -9,21 +9,23 @@ interface Result {
   status: 'passed' | 'referred' | 'failed';
   gpas: Record<string, number | null>;
   ref_subjects: string[];
+  semester: number;
 }
 
 export default function Home() {
   const [roll, setRoll] = useState('');
+  const [semester, setSemester] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const search = async () => {
-    if (!roll.trim()) return;
+    if (!roll.trim() || !semester) return;
     setLoading(true);
     setError('');
     setResult(null);
     try {
-      const res = await fetch(`/api/search?roll=${roll.trim()}`);
+      const res = await fetch(`/api/search?roll=${roll.trim()}&semester=${semester}`);
       const data = await res.json();
       if (res.ok) setResult(data);
       else setError(data.error);
@@ -45,7 +47,24 @@ export default function Home() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
         <div className="w-full max-w-md">
           <h1 className="text-2xl font-bold tracking-tight mb-1">BTEB Result</h1>
-          <p className="text-sm text-neutral-500 mb-8">Enter your roll number to check your result</p>
+          <p className="text-sm text-neutral-500 mb-6">Select your semester and enter your roll number</p>
+
+          <div className="mb-4">
+            <p className="text-xs text-neutral-400 mb-2">Semester</p>
+            <div className="flex gap-2 flex-wrap">
+              {[1,2,3,4,5,6,7,8].map(n => (
+                <button
+                  key={n}
+                  onClick={() => { setSemester(n); setResult(null); setError(''); }}
+                  className={`px-3 py-1 text-xs border transition-colors ${
+                    semester === n ? 'bg-black text-white border-black' : 'border-neutral-300 hover:border-black'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="flex gap-2 mb-6">
             <input
@@ -58,7 +77,7 @@ export default function Home() {
             />
             <button
               onClick={search}
-              disabled={loading || !roll.trim()}
+              disabled={loading || !roll.trim() || !semester}
               className="px-5 py-2 bg-black text-white text-sm font-medium disabled:opacity-40 hover:bg-neutral-800 transition-colors"
             >
               {loading ? '...' : 'Search'}
@@ -85,6 +104,11 @@ export default function Home() {
               <div className="px-4 py-3 border-b border-neutral-200">
                 <p className="text-xs text-neutral-400 uppercase tracking-wide mb-0.5">Institute</p>
                 <p className="text-sm">{result.institute_code} — {result.institute_name}</p>
+              </div>
+
+              <div className="px-4 py-3 border-b border-neutral-200">
+                <p className="text-xs text-neutral-400 uppercase tracking-wide mb-0.5">Semester</p>
+                <p className="text-sm">{result.semester}</p>
               </div>
 
               {Object.keys(result.gpas).length > 0 && (

@@ -8,6 +8,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [semester, setSemester] = useState(5);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
@@ -62,13 +63,13 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/process", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, uploadId }),
+        body: JSON.stringify({ password, uploadId, semester }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Processing failed");
 
       setProgress(100);
-      setStatus(`Done — ${data.stats.total.toLocaleString()} records saved.`);
+      setStatus(`Done — ${data.stats.total.toLocaleString()} records saved to Semester ${semester}.`);
       setStats(data.stats);
       setFile(null);
       (document.getElementById("fileInput") as HTMLInputElement).value = "";
@@ -119,6 +120,23 @@ export default function AdminPage() {
 
         <div className="border border-neutral-200 p-6 mb-6">
           <p className="text-xs text-neutral-400 uppercase tracking-wide mb-4">Upload Result PDF</p>
+
+          <div className="mb-4">
+            <p className="text-xs text-neutral-400 mb-2">Semester</p>
+            <div className="flex gap-2 flex-wrap">
+              {[1,2,3,4,5,6,7,8].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setSemester(n)}
+                  className={`px-3 py-1 text-xs border transition-colors ${
+                    semester === n ? 'bg-black text-white border-black' : 'border-neutral-300 hover:border-black'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <label
             htmlFor="fileInput"
