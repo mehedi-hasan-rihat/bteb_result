@@ -10,6 +10,7 @@ interface Result {
   gpas: Record<string, number | null>;
   ref_subjects: string[];
   semester: number;
+  subjectMap: Record<string, string>;
 }
 
 export default function Home() {
@@ -130,10 +131,17 @@ export default function Home() {
               {result.ref_subjects.length > 0 && (
                 <div className="px-4 py-3">
                   <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">Referred Subjects</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {result.ref_subjects.map((sub, i) => (
-                      <span key={i} className="text-xs border border-neutral-300 px-2 py-0.5 font-mono">{sub}</span>
-                    ))}
+                  <div className="flex flex-col gap-1.5">
+                    {result.ref_subjects.map((sub, i) => {
+                      const code = sub.match(/^(\d+)/)?.[1] ?? '';
+                      const suffix = sub.replace(/^\d+/, '');
+                      const name = result.subjectMap[code];
+                      return (
+                        <span key={i} className="text-xs border border-neutral-300 px-2 py-1 font-mono">
+                          {name ? `${code}${suffix} — ${name}` : sub}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               )}

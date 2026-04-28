@@ -1,0 +1,84 @@
+{
+  "1st_semester": {
+    "total_marks": 1000,
+    "subjects": [
+      {"code": "21011", "name": "Engineering Drawing"},
+      {"code": "25711", "name": "Bangla-I"},
+      {"code": "25712", "name": "English-I"},
+      {"code": "25911", "name": "Mathematics-I"},
+      {"code": "25912", "name": "Physics-I"},
+      {"code": "26611", "name": "Computer Office Application"},
+      {"code": "26711", "name": "Basic Electricity"}
+    ]
+  },
+  "2nd_semester": {
+    "total_marks": 1050,
+    "subjects": [
+      {"code": "25721", "name": "Bangla-II"},
+      {"code": "25722", "name": "English-II"},
+      {"code": "25812", "name": "Physical Education & Life Skills Development"},
+      {"code": "25913", "name": "Chemistry"},
+      {"code": "25921", "name": "Mathematics-II"},
+      {"code": "28521", "name": "Python Programming"},
+      {"code": "28522", "name": "Computer Graphics Design-I"},
+      {"code": "26811", "name": "Basic Electronics"}
+    ]
+  },
+  "3rd_semester": {
+    "total_marks": 1050,
+    "subjects": [
+      {"code": "25811", "name": "Social Science"},
+      {"code": "25922", "name": "Physics-II"},
+      {"code": "25931", "name": "Mathematics-III"},
+      {"code": "28531", "name": "Application Development Using Python"},
+      {"code": "28532", "name": "Computer Graphics Design-II"},
+      {"code": "28533", "name": "IT Support Services"},
+      {"code": "26831", "name": "Digital Electronics-I"}
+    ]
+  },
+  "4th_semester": {
+    "subjects": [
+      {"code": "25831", "name": "Business Communication"},
+      {"code": "28541", "name": "Java Programming"},
+      {"code": "28542", "name": "Data Structure & Algorithm"},
+      {"code": "28543", "name": "Computer Peripherals & Interfacing"},
+      {"code": "28544", "name": "Web Design & Development-I"},
+      {"code": "26841", "name": "Digital Electronics-II"},
+      {"code": "29041", "name": "Environmental Studies"}
+    ]
+  },
+  "5th_semester": {
+    "subjects": [
+      {"code": "25841", "name": "Accounting"},
+      {"code": "28551", "name": "Application Development Using Java"},
+      {"code": "28552", "name": "Web Design & Development-II"},
+      {"code": "28553", "name": "Computer Architecture & Microprocessor"},
+      {"code": "28554", "name": "Data Communication"},
+      {"code": "28555", "name": "Operating System"},
+      {"code": "28556", "name": "Project Work-I"}
+    ]
+  },
+  "6th_semester": {
+    "subjects": [
+      {"code": "25851", "name": "Principles of Marketing"},
+      {"code": "25852", "name": "Industrial Management"},
+      {"code": "28561", "name": "Database Management System"},
+      {"code": "28562", "name": "Computer Networking"},
+      {"code": "28563", "name": "Sensor & IoT System"},
+      {"code": "28564", "name": "Microcontroller Based System Design & Development"},
+      {"code": "28565", "name": "Surveillance Security System"},
+      {"code": "28566", "name": "Web Development Project"}
+    ]
+  },
+  "7th_semester": {
+    "subjects": [
+      {"code": "25853", "name": "Innovation and Entrepreneurship"},
+      {"code": "28571", "name": "Digital Marketing Technique"},
+      {"code": "28572", "name": "Network Administration & Services"},
+      {"code": "28573", "name": "Cyber Security & Ethics"},
+      {"code": "28574", "name": "Apps Development Project"},
+      {"code": "28575", "name": "Multimedia and Animation"},
+      {"code": "28576", "name": "Project Works-II"}
+    ]
+  }
+}
