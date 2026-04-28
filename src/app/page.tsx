@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import ResultSkeleton from '@/components/ResultSkeleton';
 
 interface Result {
   roll: string;
@@ -11,7 +12,10 @@ interface Result {
   ref_subjects: string[];
   semester: number;
   subjectMap: Record<string, string>;
+  subjectSemMap: Record<string, number>;
 }
+
+const SEM_ORD: Record<number, string> = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: '7th', 8: '8th' };
 
 export default function Home() {
   const [roll, setRoll] = useState('');
@@ -19,14 +23,15 @@ export default function Home() {
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
 
-  const search = async () => {
-    if (!roll.trim() || !semester) return;
+  const doSearch = async (r: string, s: number) => {
+    if (!r.trim() || !s) return;
     setLoading(true);
     setError('');
     setResult(null);
     try {
-      const res = await fetch(`/api/search?roll=${roll.trim()}&semester=${semester}`);
+      const res = await fetch(`/api/search?roll=${r.trim()}&semester=${s}`);
       const data = await res.json();
       if (res.ok) setResult(data);
       else setError(data.error);
@@ -37,10 +42,56 @@ export default function Home() {
     }
   };
 
+  // read URL params on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get('roll') ?? '';
+    const s = parseInt(params.get('semester') ?? '');
+    if (r) setRoll(r);
+    if (s >= 1 && s <= 8) setSemester(s);
+    if (r && s >= 1 && s <= 8) doSearch(r, s);
+  }, []);
+
+  const search = () => {
+    if (!roll.trim() || !semester) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('roll', roll.trim());
+    url.searchParams.set('semester', String(semester));
+    window.history.replaceState(null, '', url.toString());
+    doSearch(roll.trim(), semester);
+  };
+
+  const share = async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('roll', result?.roll ?? roll.trim());
+    url.searchParams.set('semester', String(result?.semester ?? semester));
+    const shareUrl = url.toString();
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        // fallback for http or older browsers
+        const ta = document.createElement('textarea');
+        ta.value = shareUrl;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // last resort: open prompt
+      window.prompt('Copy this link:', shareUrl);
+    }
+  };
+
   const semesterLabel = (key: string) => {
-    const n = key.replace('gpa', '');
-    const map: Record<string, string> = { '1': '1st', '2': '2nd', '3': '3rd', '4': '4th', '5': '5th', '6': '6th', '7': '7th', '8': '8th' };
-    return `Sem ${map[n] ?? n}`;
+    const n = parseInt(key.replace('gpa', ''));
+    return `${SEM_ORD[n] ?? n} Sem`;
   };
 
   return (
@@ -89,17 +140,27 @@ export default function Home() {
             <p className="text-sm text-neutral-500 border border-neutral-200 px-3 py-2 mb-4">{error}</p>
           )}
 
-          {result && (
+          {loading && <ResultSkeleton />}
+
+          {!loading && result && (
             <div className="border border-neutral-200">
               <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200">
                 <span className="font-mono font-bold text-lg">{result.roll}</span>
-                <span className={`text-xs font-semibold uppercase tracking-widest px-2 py-1 ${
-                  result.status === 'passed' ? 'bg-black text-white' :
-                  result.status === 'referred' ? 'bg-neutral-200 text-black' :
-                  'border border-black text-black'
-                }`}>
-                  {result.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-semibold uppercase tracking-widest px-2 py-1 ${
+                    result.status === 'passed' ? 'bg-black text-white' :
+                    result.status === 'referred' ? 'bg-neutral-200 text-black' :
+                    'border border-black text-black'
+                  }`}>
+                    {result.status}
+                  </span>
+                  <button
+                    onClick={share}
+                    className="text-xs border border-neutral-300 px-2 py-1 hover:border-black transition-colors"
+                  >
+                    {copied ? 'Copied!' : 'Share'}
+                  </button>
+                </div>
               </div>
 
               <div className="px-4 py-3 border-b border-neutral-200">
@@ -109,7 +170,7 @@ export default function Home() {
 
               <div className="px-4 py-3 border-b border-neutral-200">
                 <p className="text-xs text-neutral-400 uppercase tracking-wide mb-0.5">Semester</p>
-                <p className="text-sm">{result.semester}</p>
+                <p className="text-sm">{SEM_ORD[result.semester]} Semester</p>
               </div>
 
               {Object.keys(result.gpas).length > 0 && (
@@ -117,7 +178,7 @@ export default function Home() {
                   <p className="text-xs text-neutral-400 uppercase tracking-wide mb-2">GPA</p>
                   <div className="grid grid-cols-3 gap-3">
                     {Object.entries(result.gpas)
-                      .sort((a, b) => b[0].localeCompare(a[0]))
+                      .sort((a, b) => a[0].localeCompare(b[0]))
                       .map(([key, val]) => (
                         <div key={key}>
                           <p className="text-xs text-neutral-400">{semesterLabel(key)}</p>
@@ -136,10 +197,16 @@ export default function Home() {
                       const code = sub.match(/^(\d+)/)?.[1] ?? '';
                       const suffix = sub.replace(/^\d+/, '');
                       const name = result.subjectMap[code];
+                      const subSem = result.subjectSemMap[code];
                       return (
-                        <span key={i} className="text-xs border border-neutral-300 px-2 py-1 font-mono">
-                          {name ? `${code}${suffix} — ${name}` : sub}
-                        </span>
+                        <div key={i} className="flex items-center justify-between border border-neutral-300 px-2 py-1">
+                          <span className="text-xs font-mono">
+                            {name ? `${code}${suffix} — ${name}` : sub}
+                          </span>
+                          {subSem > 0 && (
+                            <span className="text-xs text-neutral-400 ml-2 shrink-0">{SEM_ORD[subSem]} Sem</span>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
