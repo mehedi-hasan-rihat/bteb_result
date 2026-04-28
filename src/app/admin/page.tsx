@@ -2,12 +2,15 @@
 import { useState } from "react";
 import Link from "next/link";
 
+const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB per chunk
+
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState("");
   const [stats, setStats] = useState<{ total: number; passed: number; referred: number; failed: number } | null>(null);
   const [error, setError] = useState("");
 
@@ -25,26 +28,54 @@ export default function AdminPage() {
     if (!file) return;
     setUploading(true);
     setError("");
-    setProgress("Processing PDF...");
     setStats(null);
-    const formData = new FormData();
-    formData.append("pdf", file);
-    formData.append("password", password);
+    setProgress(0);
+
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const uploadId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
     try {
-      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (res.ok) {
-        setStats(data.stats);
-        setProgress(`Done — ${data.stats.total.toLocaleString()} records saved.`);
-        setFile(null);
-        (document.getElementById("fileInput") as HTMLInputElement).value = "";
-      } else {
-        setError(data.error || "Upload failed");
-        setProgress("");
+      // Phase 1: upload chunks
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        const formData = new FormData();
+        formData.append("password", password);
+        formData.append("chunk", chunk);
+        formData.append("index", String(i));
+        formData.append("total", String(totalChunks));
+        formData.append("uploadId", uploadId);
+
+        const res = await fetch("/api/admin/upload-chunk", { method: "POST", body: formData });
+        if (!res.ok) {
+          const d = await res.json();
+          throw new Error(d.error || "Chunk upload failed");
+        }
+
+        const uploadProgress = Math.round(((i + 1) / totalChunks) * 80);
+        setProgress(uploadProgress);
+        setStatus(`Uploading... ${i + 1}/${totalChunks} chunks`);
       }
-    } catch {
-      setError("Failed to upload");
-      setProgress("");
+
+      // Phase 2: process
+      setProgress(85);
+      setStatus("Parsing PDF...");
+      const res = await fetch("/api/admin/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, uploadId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Processing failed");
+
+      setProgress(100);
+      setStatus(`Done — ${data.stats.total.toLocaleString()} records saved.`);
+      setStats(data.stats);
+      setFile(null);
+      (document.getElementById("fileInput") as HTMLInputElement).value = "";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+      setStatus("");
+      setProgress(0);
     } finally {
       setUploading(false);
     }
@@ -102,9 +133,28 @@ export default function AdminPage() {
               type="file"
               accept=".pdf"
               className="hidden"
-              onChange={e => setFile(e.target.files?.[0] || null)}
+              onChange={e => { setFile(e.target.files?.[0] || null); setStats(null); setStatus(""); setProgress(0); setError(""); }}
             />
           </label>
+
+          {uploading && (
+            <div className="mb-4">
+              <div className="flex justify-between text-xs text-neutral-400 mb-1">
+                <span>{status}</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="w-full bg-neutral-100 h-1">
+                <div
+                  className="bg-black h-1 transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {!uploading && status && (
+            <p className="text-xs text-neutral-500 mb-4">{status}</p>
+          )}
 
           <button
             onClick={handleUpload}
@@ -114,7 +164,6 @@ export default function AdminPage() {
             {uploading ? "Processing..." : "Extract & Save"}
           </button>
 
-          {progress && <p className="mt-3 text-xs text-neutral-500">{progress}</p>}
           {error && <p className="mt-3 text-xs text-neutral-500">{error}</p>}
         </div>
 
