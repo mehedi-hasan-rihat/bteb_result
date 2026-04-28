@@ -26,21 +26,20 @@ function getSubjectMaps(): { nameMap: Record<string, string>; semMap: Record<str
 
 export async function GET(request: NextRequest) {
   const roll = request.nextUrl.searchParams.get('roll');
-  const sem = parseInt(request.nextUrl.searchParams.get('semester') || '');
-
   if (!roll) return NextResponse.json({ error: 'Roll number required' }, { status: 400 });
-  if (!sem || sem < 1 || sem > 8) return NextResponse.json({ error: 'Semester required (1-8)' }, { status: 400 });
 
-  const filePath = join(dataDir, `semester_${sem}.json`);
-  if (!existsSync(filePath)) return NextResponse.json({ error: 'No data for this semester' }, { status: 404 });
-
-  try {
-    const data = JSON.parse(readFileSync(filePath, 'utf-8'));
-    const result = data.find((s: { roll: string }) => s.roll === roll.trim());
-    if (!result) return NextResponse.json({ error: 'Result not found for this roll number' }, { status: 404 });
-    const { nameMap, semMap } = getSubjectMaps();
-    return NextResponse.json({ ...result, semester: sem, subjectMap: nameMap, subjectSemMap: semMap });
-  } catch {
-    return NextResponse.json({ error: 'Failed to read data' }, { status: 500 });
+  for (let sem = 1; sem <= 8; sem++) {
+    const filePath = join(dataDir, `semester_${sem}.json`);
+    if (!existsSync(filePath)) continue;
+    try {
+      const data = JSON.parse(readFileSync(filePath, 'utf-8'));
+      const result = data.find((s: { roll: string }) => s.roll === roll.trim());
+      if (result) {
+        const { nameMap, semMap } = getSubjectMaps();
+        return NextResponse.json({ ...result, semester: sem, subjectMap: nameMap, subjectSemMap: semMap });
+      }
+    } catch { continue; }
   }
+
+  return NextResponse.json({ error: 'Result not found for this roll number' }, { status: 404 });
 }

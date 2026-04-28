@@ -19,19 +19,18 @@ const SEM_ORD: Record<number, string> = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th'
 
 export default function Home() {
   const [roll, setRoll] = useState('');
-  const [semester, setSemester] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const doSearch = async (r: string, s: number) => {
-    if (!r.trim() || !s) return;
+  const doSearch = async (r: string) => {
+    if (!r.trim()) return;
     setLoading(true);
     setError('');
     setResult(null);
     try {
-      const res = await fetch(`/api/search?roll=${r.trim()}&semester=${s}`);
+      const res = await fetch(`/api/search?roll=${r.trim()}`);
       const data = await res.json();
       if (res.ok) setResult(data);
       else setError(data.error);
@@ -42,35 +41,28 @@ export default function Home() {
     }
   };
 
-  // read URL params on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const r = params.get('roll') ?? '';
-    const s = parseInt(params.get('semester') ?? '');
-    if (r) setRoll(r);
-    if (s >= 1 && s <= 8) setSemester(s);
-    if (r && s >= 1 && s <= 8) doSearch(r, s);
+    if (r) { setRoll(r); doSearch(r); }
   }, []);
 
   const search = () => {
-    if (!roll.trim() || !semester) return;
+    if (!roll.trim()) return;
     const url = new URL(window.location.href);
     url.searchParams.set('roll', roll.trim());
-    url.searchParams.set('semester', String(semester));
     window.history.replaceState(null, '', url.toString());
-    doSearch(roll.trim(), semester);
+    doSearch(roll.trim());
   };
 
   const share = async () => {
     const url = new URL(window.location.href);
     url.searchParams.set('roll', result?.roll ?? roll.trim());
-    url.searchParams.set('semester', String(result?.semester ?? semester));
     const shareUrl = url.toString();
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shareUrl);
       } else {
-        // fallback for http or older browsers
         const ta = document.createElement('textarea');
         ta.value = shareUrl;
         ta.style.position = 'fixed';
@@ -84,14 +76,8 @@ export default function Home() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // last resort: open prompt
       window.prompt('Copy this link:', shareUrl);
     }
-  };
-
-  const semesterLabel = (key: string) => {
-    const n = parseInt(key.replace('gpa', ''));
-    return `${SEM_ORD[n] ?? n} Sem`;
   };
 
   return (
@@ -99,24 +85,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
         <div className="w-full max-w-md">
           <h1 className="text-2xl font-bold tracking-tight mb-1">BTEB Result</h1>
-          <p className="text-sm text-neutral-500 mb-6">Select your semester and enter your roll number</p>
-
-          <div className="mb-4">
-            <p className="text-xs text-neutral-400 mb-2">Semester</p>
-            <div className="flex gap-2 flex-wrap">
-              {[1,2,3,4,5,6,7,8].map(n => (
-                <button
-                  key={n}
-                  onClick={() => { setSemester(n); setResult(null); setError(''); }}
-                  className={`px-3 py-1 text-xs border transition-colors ${
-                    semester === n ? 'bg-black text-white border-black' : 'border-neutral-300 hover:border-black'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
+          <p className="text-sm text-neutral-500 mb-8">Enter your roll number to check your result</p>
 
           <div className="flex gap-2 mb-6">
             <input
@@ -129,7 +98,7 @@ export default function Home() {
             />
             <button
               onClick={search}
-              disabled={loading || !roll.trim() || !semester}
+              disabled={loading || !roll.trim()}
               className="px-5 py-2 bg-black text-white text-sm font-medium disabled:opacity-40 hover:bg-neutral-800 transition-colors"
             >
               {loading ? '...' : 'Search'}
@@ -181,7 +150,7 @@ export default function Home() {
                       .sort((a, b) => a[0].localeCompare(b[0]))
                       .map(([key, val]) => (
                         <div key={key}>
-                          <p className="text-xs text-neutral-400">{semesterLabel(key)}</p>
+                          <p className="text-xs text-neutral-400">{SEM_ORD[parseInt(key.replace('gpa', ''))] ?? key} Sem</p>
                           <p className="font-mono font-semibold text-sm">{val != null ? val.toFixed(2) : 'REF'}</p>
                         </div>
                       ))}
